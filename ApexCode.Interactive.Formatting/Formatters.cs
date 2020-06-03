@@ -109,9 +109,13 @@ namespace ApexCode.Interactive.Formatting
         {
             Formatter<MulticlassClassificationMetrics>.Register((m, writer) =>
             {
-                if (Categories is null)
+                if (Categories == null)
                 {
-                    Categories = Enumerable.Range(0, m.PerClassLogLoss.Count - 1).Select(r => r.ToString()).ToArray();
+                    Categories = new string[m.PerClassLogLoss.Count];
+                    for (int i = 0; i < Categories.Count(); i++)
+                    {
+                        Categories[i] = i.ToString();
+                    }
                 }
 
                 var oneMessage = "the closer to 1, the better";
