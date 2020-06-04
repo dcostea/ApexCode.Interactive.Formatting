@@ -14,7 +14,7 @@ namespace ApexCode.Interactive.Formatting
     {
         public static string[] Categories { get; set; }
 
-        public static void Register<T>()
+        public static void Register<T>(object[] parameters = null)
         {
             switch (typeof(T))
             {
@@ -23,11 +23,11 @@ namespace ApexCode.Interactive.Formatting
                     break;
 
                 case Type cfType when cfType == typeof(ConfusionMatrix):
-                    RegisterConfusionMatrix();
+                    RegisterConfusionMatrix(parameters);
                     break;
 
                 case Type mcmType when mcmType == typeof(MulticlassClassificationMetrics):
-                    RegisterClassificationMetrics();
+                    RegisterMulticlassClassificationMetrics(parameters);
                     break;
 
                 case Type lmcmType when lmcmType == typeof(List<TrainCatalogBase.CrossValidationResult<MulticlassClassificationMetrics>>):
@@ -107,23 +107,23 @@ namespace ApexCode.Interactive.Formatting
             Console.WriteLine("List<TrainCatalogBase.CrossValidationResult<MulticlassClassificationMetrics>> formatter loaded.");
         }
 
-        private static void RegisterClassificationMetrics()
+        private static void RegisterMulticlassClassificationMetrics(object[] parameters)
         {
             Formatter<MulticlassClassificationMetrics>.Register((m, writer) =>
             {
-                if (Categories == null)
+                if (parameters?.Length == m.PerClassLogLoss.Count)
                 {
-                    Categories = new string[m.PerClassLogLoss.Count];
-                    for (int i = 0; i < Categories.Count(); i++)
+                    string[] categories = new string[m.PerClassLogLoss.Count];
+
+                    for (int i = 0; i < parameters.Count(); i++)
                     {
-                        Categories[i] = i.ToString();
+                        categories[i] = parameters[i].ToString();
                     }
-                }
 
-                var oneMessage = "the closer to 1, the better";
-                var zeroMessage = "the closer to 0, the better";
+                    var oneMessage = "the closer to 1, the better";
+                    var zeroMessage = "the closer to 0, the better";
 
-                var headers = new List<IHtmlContent>
+                    var headers = new List<IHtmlContent>
             {
                 th(b("EVALUATION: multi-class classification")),
                 th(b("Class")),
@@ -131,130 +131,150 @@ namespace ApexCode.Interactive.Formatting
                 th(b("Note"))
             };
 
-                var rows = new List<List<IHtmlContent>>();
+                    var rows = new List<List<IHtmlContent>>();
 
-                var cells = new List<IHtmlContent>
+                    var cells = new List<IHtmlContent>
             {
                 td(b("MacroAccuracy")),
                 td(""),
                 td($"{m.MacroAccuracy:0.000}"),
                 td(oneMessage)
             };
-                rows.Add(cells);
+                    rows.Add(cells);
 
-                cells = new List<IHtmlContent>
+                    cells = new List<IHtmlContent>
             {
                 td(b("MicroAccuracy")),
                 td(""),
                 td($"{m.MicroAccuracy:0.000}"),
                 td(oneMessage)
             };
-                rows.Add(cells);
+                    rows.Add(cells);
 
-                cells = new List<IHtmlContent>
+                    cells = new List<IHtmlContent>
             {
                 td(b("LogLoss")),
                 td(""),
                 td($"{m.LogLoss:0.000}"),
                 td(zeroMessage)
             };
-                rows.Add(cells);
+                    rows.Add(cells);
 
-                cells = new List<IHtmlContent>
+                    cells = new List<IHtmlContent>
             {
                 td[rowspan: $"{m.PerClassLogLoss.Count + 1}"](b("LogLoss per Class"))
             };
-                rows.Add(cells);
+                    rows.Add(cells);
 
-                for (int i = 0; i < m.PerClassLogLoss.Count; i++)
+                    for (int i = 0; i < m.PerClassLogLoss.Count; i++)
+                    {
+                        cells = new List<IHtmlContent>
                 {
-                    cells = new List<IHtmlContent>
-                {
-                    td($"{Categories[i]}"),
+                    td($"{categories[i]}"),
                     td($"{m.PerClassLogLoss[i]:0.000}"),
                     td(zeroMessage)
                 };
-                    rows.Add(cells);
-                }
+                        rows.Add(cells);
+                    }
 
-                var t = table(
-                    thead(
-                        headers),
-                    tbody(
-                        rows.Select(
-                            r => tr(r))));
-                writer.Write(t);
+                    var t = table(
+                        thead(
+                            headers),
+                        tbody(
+                            rows.Select(
+                                r => tr(r))));
+                    writer.Write(t);
+                }
+                else 
+                {
+                    writer.Write($"The number of classes by Correlation Matrix ({m.PerClassLogLoss.Count}) does not match the number of categories argument ({parameters?.Length})");
+                }
             }, "text/html");
 
             Console.WriteLine("MulticlassClassificationMetrics formatter loaded.");
         }
 
-        private static void RegisterConfusionMatrix()
+        private static void RegisterConfusionMatrix(object[] parameters)
         {
             Formatter<ConfusionMatrix>.Register((cm, writer) =>
             {
-                var cssFirstColor = "background-color: lightsteelblue; ";
-                var cssSecondColor = "background-color: #E3EAF3; ";
-                var cssTransparent = "background-color: transparent";
-                var cssBold = "font-weight: bold; ";
-                var cssPadding = "padding: 8px; ";
-                var cssCenterAlign = "text-align: center; ";
-                var cssTable = "margin: 50px; ";
-                var cssTitle = cssPadding + cssFirstColor;
-                var cssHeader = cssPadding + cssBold + cssSecondColor;
-                var cssCount = cssPadding;
-                var cssFormula = cssPadding + cssSecondColor;
+                if (parameters?.Length == cm.NumberOfClasses)
+                {
+                    string[] categories = new string[cm.NumberOfClasses];
 
-                var rows = new List<IHtmlContent>();
+                    for (int i = 0; i < parameters.Count(); i++)
+                    {
+                        categories[i] = parameters[i].ToString();
+                    }
 
-                // header
-                var cells = new List<IHtmlContent>
+                    var cssFirstColor = "background-color: lightsteelblue; ";
+                    var cssSecondColor = "background-color: #E3EAF3; ";
+                    var cssTransparent = "background-color: transparent";
+                    var cssBold = "font-weight: bold; ";
+                    var cssPadding = "padding: 8px; ";
+                    var cssCenterAlign = "text-align: center; ";
+                    var cssTable = "margin: 50px; ";
+                    var cssTitle = cssPadding + cssFirstColor;
+                    var cssHeader = cssPadding + cssBold + cssSecondColor;
+                    var cssCount = cssPadding;
+                    var cssFormula = cssPadding + cssSecondColor;
+
+                    var rows = new List<IHtmlContent>();
+
+                    // header
+                    var cells = new List<IHtmlContent>
             {
                 td[rowspan: 2, colspan: 2, style: cssTitle + cssCenterAlign]("Confusion Matrix"),
                 td[colspan: cm.Counts.Count, style: cssTitle + cssCenterAlign]("Predicted"),
                 td[style: cssTitle]("")
             };
-                rows.Add(tr[style: cssTransparent](cells));
-
-                // features header
-                cells = new List<IHtmlContent>();
-                for (int j = 0; j < cm.Counts.Count; j++)
-                {
-                    cells.Add(td[style: cssHeader](Categories.ToList()[j]));
-                }
-                rows.Add(tr[style: cssTransparent](cells));
-                cells.Add(td[style: cssTitle]("Recall"));
-
-                // values
-                for (int i = 0; i < cm.NumberOfClasses; i++)
-                {
-                    cells = new List<IHtmlContent>();
-                    if (i == 0)
-                    {
-                        cells.Add(td[rowspan: cm.Counts.Count, style: cssTitle]("Truth"));
-                    }
-                    cells.Add(td[style: cssHeader](Categories.ToList()[i]));
-                    for (int j = 0; j < cm.NumberOfClasses; j++)
-                    {
-                        cells.Add(td[style: cssCount](cm.Counts[i][j]));
-                    }
-                    cells.Add(td[style: cssFormula](Math.Round(cm.PerClassRecall[i], 4)));
                     rows.Add(tr[style: cssTransparent](cells));
-                }
 
-                //footer
-                cells = new List<IHtmlContent>
+                    // features header
+                    cells = new List<IHtmlContent>();
+                    for (int j = 0; j < cm.Counts.Count; j++)
+                    {
+                        cells.Add(td[style: cssHeader](categories.ToList()[j]));
+                    }
+                    rows.Add(tr[style: cssTransparent](cells));
+                    cells.Add(td[style: cssTitle]("Recall"));
+
+                    // values
+                    for (int i = 0; i < cm.NumberOfClasses; i++)
+                    {
+                        cells = new List<IHtmlContent>();
+                        if (i == 0)
+                        {
+                            cells.Add(td[rowspan: cm.Counts.Count, style: cssTitle]("Truth"));
+                        }
+                        cells.Add(td[style: cssHeader](categories.ToList()[i]));
+                        for (int j = 0; j < cm.NumberOfClasses; j++)
+                        {
+                            cells.Add(td[style: cssCount](cm.Counts[i][j]));
+                        }
+                        cells.Add(td[style: cssFormula](Math.Round(cm.PerClassRecall[i], 4)));
+                        rows.Add(tr[style: cssTransparent](cells));
+                    }
+
+                    //footer
+                    cells = new List<IHtmlContent>
             {
                 td[colspan: 2, style: cssTitle]("Precision")
             };
-                for (int j = 0; j < cm.Counts.Count; j++)
-                {
-                    cells.Add(td[style: cssFormula](Math.Round(cm.PerClassPrecision[j], 4)));
-                }
-                cells.Add(td[style: cssFormula]("total = " + cm.Counts.Sum(x => x.Sum())));
-                rows.Add(tr[style: cssTransparent](cells));
+                    for (int j = 0; j < cm.Counts.Count; j++)
+                    {
+                        cells.Add(td[style: cssFormula](Math.Round(cm.PerClassPrecision[j], 4)));
+                    }
+                    cells.Add(td[style: cssFormula]("total = " + cm.Counts.Sum(x => x.Sum())));
+                    rows.Add(tr[style: cssTransparent](cells));
 
-                writer.Write(table[style: cssTable](tbody(rows)));
+                    writer.Write(table[style: cssTable](tbody(rows)));
+                }
+                else
+                {
+                    writer.Write($"The number of classes in the Confusion Matrix ({cm.NumberOfClasses}) does not match the number of categories argument ({parameters?.Length})");
+                }
+
             }, "text/html");
 
             Console.WriteLine("ConfusionMatrix formatter loaded.");

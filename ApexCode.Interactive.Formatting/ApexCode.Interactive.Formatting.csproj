@@ -10,11 +10,13 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Apex Code, 2020</Copyright>
     <PackageTags>ML, MLNET, ObjectFormatters, Jupyter</PackageTags>
-    <Version>0.0.1-alpha.3</Version>
+    <Version>0.0.1-alpha.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/dcostea/ApexCode.Interactive.Formatting</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dcostea/ApexCode.Interactive.Formatting</RepositoryUrl>
     <PackageReleaseNotes>Alpha release may contain bugs.
+
+Critical bug fixed: missing categories.
 
 So far, implemented formatters are:
 

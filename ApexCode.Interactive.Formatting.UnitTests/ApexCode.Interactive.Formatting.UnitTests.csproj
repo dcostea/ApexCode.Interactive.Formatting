@@ -17,4 +17,10 @@
     <ProjectReference Include="..\ApexCode.Interactive.Formatting\ApexCode.Interactive.Formatting.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="sensors_data.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
