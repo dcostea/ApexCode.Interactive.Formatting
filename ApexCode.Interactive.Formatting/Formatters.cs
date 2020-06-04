@@ -103,6 +103,8 @@ namespace ApexCode.Interactive.Formatting
                             r => tr(r))));
                 writer.Write(t);
             }, "text/html");
+
+            Console.WriteLine("List<TrainCatalogBase.CrossValidationResult<MulticlassClassificationMetrics>> formatter loaded.");
         }
 
         private static void RegisterClassificationMetrics()
@@ -183,6 +185,8 @@ namespace ApexCode.Interactive.Formatting
                             r => tr(r))));
                 writer.Write(t);
             }, "text/html");
+
+            Console.WriteLine("MulticlassClassificationMetrics formatter loaded.");
         }
 
         private static void RegisterConfusionMatrix()
@@ -252,6 +256,8 @@ namespace ApexCode.Interactive.Formatting
 
                 writer.Write(table[style: cssTable](tbody(rows)));
             }, "text/html");
+
+            Console.WriteLine("ConfusionMatrix formatter loaded.");
         }
 
         private static void RegisterDataFrame()
@@ -287,6 +293,8 @@ namespace ApexCode.Interactive.Formatting
 
                 writer.Write(t);
             }, "text/html");
+
+            Console.WriteLine("DataFrame formatter loaded.");
         }
 
         private static (double average, double stdDev, double confInt) ExtractMetrics(IEnumerable<double> accuracyValues)
