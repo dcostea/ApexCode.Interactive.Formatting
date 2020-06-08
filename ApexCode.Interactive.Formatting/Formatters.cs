@@ -465,6 +465,8 @@ namespace ApexCode.Interactive.Formatting
                 const int TAKE = 500;
                 const int SIZE = 20;
 
+                var uniqueId = $"table_{DateTime.Now.Ticks}";
+
                 var title = h3[style: "text-align: center;"]($"DataFrame ({df.Columns.Count} columns, {df.Rows.Count} rows) | MAX rows: {TAKE}");
 
                 var header = new List<IHtmlContent>
@@ -489,19 +491,19 @@ namespace ApexCode.Interactive.Formatting
                 }
 
                 string hideAllRows = string.Empty;
-                hideAllRows += "var els = document.querySelectorAll('#dftable tbody tr:nth-child(n)'); ";
+                hideAllRows += $"var els = document.querySelectorAll('#{uniqueId} tbody tr:nth-child(n)'); ";
                 hideAllRows += "for (var i = 0; i < els.length; i++) { els[i].style.display='none'; } ";
 
                 var footer = new List<IHtmlContent>();
                 footer.Add(b[style: "margin: 2px;"]("Page"));
                 for (var page = 0; page < TAKE / SIZE; page++)
                 {
-                    var script = hideAllRows + FormatPageScript(page, SIZE);
+                    var script = hideAllRows + FormatPageScript(page, SIZE, uniqueId);
                     footer.Add(button[style: "margin: 2px;", onclick: script](page));
                 }
 
                 //table
-                var t = table[id: "dftable"](
+                var t = table[id: $"{uniqueId}" ](
                     caption(title),
                     thead(tr(header)),
                     tbody(rows.Select(r => tr[style: "display: none"](r))),
@@ -510,17 +512,17 @@ namespace ApexCode.Interactive.Formatting
                 writer.Write(t);
 
                 //show first page
-                writer.Write($"<script>{FormatPageScript(0, SIZE)}</script>");
+                writer.Write($"<script>{FormatPageScript(0, SIZE, uniqueId)}</script>");
 
             }, "text/html");
 
             Console.WriteLine("DataFrame formatter loaded.");
 
-            static string FormatPageScript(int page, int size)
+            static string FormatPageScript(int page, int size, string uniqueId)
             {
                 var script = string.Empty;
-                script += $"var els = document.querySelectorAll('tbody tr:nth-child(n+{page * size + 1})'); ";
-                script += $"for (var i = 0; i < {size}; i++) {{ els[i].style.display='table-row'; }}";
+                script += $"var els = document.querySelectorAll('{uniqueId} tbody tr:nth-child(n+{page * size + 1})'); ";
+                script += $"for (var j = 0; j < {size}; j++) {{ els[j].style.display='table-row'; }}";
                 return script;
             }
         }

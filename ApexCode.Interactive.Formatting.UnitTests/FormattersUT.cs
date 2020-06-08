@@ -31,7 +31,7 @@ namespace ApexCode.Interactive.Formatting.UnitTests
             Formatters.Register<DataFrame>();
 
             //Assert
-            df.ToDisplayString("text/html").Should().Contain("dftable");
+            df.ToDisplayString("text/html").Should().Contain("table_");
         }
 
         const string DATASET_PATH = "./sensors_data.csv";
