@@ -26,6 +26,10 @@ namespace ApexCode.Interactive.Formatting
                     RegisterConfusionMatrix(parameters);
                     break;
 
+                case Type cfType when cfType == typeof(ConfusionMatrixWithCategories):
+                    RegisterConfusionMatrixWithCategories();
+                    break;
+
                 case Type mcmType when mcmType == typeof(MulticlassClassificationMetrics):
                     RegisterMulticlassClassificationMetrics(parameters);
                     break;
@@ -194,6 +198,92 @@ namespace ApexCode.Interactive.Formatting
             Console.WriteLine("MulticlassClassificationMetrics formatter loaded.");
         }
 
+        private static void RegisterConfusionMatrixWithCategories()
+        {
+            Formatter<ConfusionMatrixWithCategories>.Register((cm, writer) =>
+            {
+                if (cm.Categories?.Length == cm.ConfusionMatrix.NumberOfClasses)
+                {
+                    string[] categories = new string[cm.ConfusionMatrix.NumberOfClasses];
+
+                    for (int i = 0; i < cm.Categories.Count(); i++)
+                    {
+                        categories[i] = cm.Categories[i].ToString();
+                    }
+
+                    var cssFirstColor = "background-color: lightsteelblue; ";
+                    var cssSecondColor = "background-color: #E3EAF3; ";
+                    var cssTransparent = "background-color: transparent";
+                    var cssBold = "font-weight: bold; ";
+                    var cssPadding = "padding: 8px; ";
+                    var cssCenterAlign = "text-align: center; ";
+                    var cssTable = "margin: 50px; ";
+                    var cssTitle = cssPadding + cssFirstColor;
+                    var cssHeader = cssPadding + cssBold + cssSecondColor;
+                    var cssCount = cssPadding;
+                    var cssFormula = cssPadding + cssSecondColor;
+
+                    var rows = new List<IHtmlContent>();
+
+                    // header
+                    var cells = new List<IHtmlContent>
+            {
+                td[rowspan: 2, colspan: 2, style: cssTitle + cssCenterAlign]("Confusion Matrix"),
+                td[colspan: cm.ConfusionMatrix.Counts.Count, style: cssTitle + cssCenterAlign]("Predicted"),
+                td[style: cssTitle]("")
+            };
+                    rows.Add(tr[style: cssTransparent](cells));
+
+                    // features header
+                    cells = new List<IHtmlContent>();
+                    for (int j = 0; j < cm.ConfusionMatrix.Counts.Count; j++)
+                    {
+                        cells.Add(td[style: cssHeader](categories.ToList()[j]));
+                    }
+                    rows.Add(tr[style: cssTransparent](cells));
+                    cells.Add(td[style: cssTitle]("Recall"));
+
+                    // values
+                    for (int i = 0; i < cm.ConfusionMatrix.NumberOfClasses; i++)
+                    {
+                        cells = new List<IHtmlContent>();
+                        if (i == 0)
+                        {
+                            cells.Add(td[rowspan: cm.ConfusionMatrix.Counts.Count, style: cssTitle]("Truth"));
+                        }
+                        cells.Add(td[style: cssHeader](categories.ToList()[i]));
+                        for (int j = 0; j < cm.ConfusionMatrix.NumberOfClasses; j++)
+                        {
+                            cells.Add(td[style: cssCount](cm.ConfusionMatrix.Counts[i][j]));
+                        }
+                        cells.Add(td[style: cssFormula](Math.Round(cm.ConfusionMatrix.PerClassRecall[i], 4)));
+                        rows.Add(tr[style: cssTransparent](cells));
+                    }
+
+                    //footer
+                    cells = new List<IHtmlContent>
+            {
+                td[colspan: 2, style: cssTitle]("Precision")
+            };
+                    for (int j = 0; j < cm.ConfusionMatrix.Counts.Count; j++)
+                    {
+                        cells.Add(td[style: cssFormula](Math.Round(cm.ConfusionMatrix.PerClassPrecision[j], 4)));
+                    }
+                    cells.Add(td[style: cssFormula]("total = " + cm.ConfusionMatrix.Counts.Sum(x => x.Sum())));
+                    rows.Add(tr[style: cssTransparent](cells));
+
+                    writer.Write(table[style: cssTable](tbody(rows)));
+                }
+                else
+                {
+                    writer.Write($"The number of classes in the Confusion Matrix ({cm.ConfusionMatrix.NumberOfClasses}) does not match the number of categories argument ({cm.Categories?.Length})");
+                }
+
+            }, "text/html");
+
+            Console.WriteLine("ConfusionMatrix formatter loaded.");
+        }
+
         private static void RegisterConfusionMatrix(object[] parameters)
         {
             Formatter<ConfusionMatrix>.Register((cm, writer) =>
@@ -284,37 +374,67 @@ namespace ApexCode.Interactive.Formatting
         {
             Formatter<DataFrame>.Register((df, writer) =>
             {
-                var headers = new List<IHtmlContent>
-            {
-                th(i("index"))
-            };
-                headers.AddRange(df.Columns.Select(c => (IHtmlContent)th(c.Name)));
+                const int TAKE = 500;
+                const int SIZE = 20;
+
+                var title = h3[style: "text-align: center;"]($"DataFrame ({df.Columns.Count} columns, {df.Rows.Count} rows) | MAX rows: {TAKE}");
+
+                var header = new List<IHtmlContent>
+                {
+                    th(i("index"))
+                };
+                header.AddRange(df.Columns.Select(c => (IHtmlContent)th(c.Name)));
+
+                // table body
                 var rows = new List<List<IHtmlContent>>();
-                var take = 10;
-                for (var i = 0; i < Math.Min(take, df.Rows.Count); i++)
+                for (var index = 0; index < Math.Min(TAKE, df.Rows.Count); index++)
                 {
                     var cells = new List<IHtmlContent>
-                {
-                    td(i)
-                };
-                    foreach (var obj in df.Rows[i])
+                    {
+                        td(i((index)))
+                    };
+                    foreach (var obj in df.Rows[index])
                     {
                         cells.Add(td(obj));
                     }
                     rows.Add(cells);
                 }
 
-                var t = table(
-                    thead(
-                        headers),
-                    tbody(
-                        rows.Select(
-                            r => tr(r))));
+                string hideAllRows = string.Empty;
+                hideAllRows += "var els = document.querySelectorAll('#dftable tbody tr:nth-child(n)'); ";
+                hideAllRows += "for (var i = 0; i < els.length; i++) { els[i].style.display='none'; } ";
 
+                var footer = new List<IHtmlContent>();
+                footer.Add(b[style: "margin: 2px;"]("Page"));
+                for (var page = 0; page < TAKE / SIZE; page++)
+                {
+                    var script = hideAllRows + FormatPageScript(page, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: script](page));
+                }
+
+                //table
+                var t = table[id: "dftable"](
+                    caption(title),
+                    thead(header),
+                    tbody(rows.Select(r => tr[style: "display: none"](r))),
+                    tfoot(tr(td[colspan: df.Columns.Count + 1](footer)))
+                );
                 writer.Write(t);
+
+                //show first page
+                writer.Write($"<script>{FormatPageScript(0, SIZE)}</script>");
+
             }, "text/html");
 
             Console.WriteLine("DataFrame formatter loaded.");
+
+            static string FormatPageScript(int page, int size)
+            {
+                var script = string.Empty;
+                script += $"var els = document.querySelectorAll('tbody tr:nth-child(n+{page * size + 1})'); ";
+                script += $"for (var i = 0; i < {size}; i++) {{ els[i].style.display='table-row'; }}";
+                return script;
+            }
         }
 
         private static (double average, double stdDev, double confInt) ExtractMetrics(IEnumerable<double> accuracyValues)

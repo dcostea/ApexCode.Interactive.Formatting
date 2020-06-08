@@ -89,6 +89,26 @@ namespace ApexCode.Interactive.Formatting.UnitTests
         }
 
         [Test]
+        public void ConfusionMatrixWithCategories_ValidCategories_ReturnsHtml()
+        {
+            //Arrange
+            var (trainingData, testingData) = TestHelper.LoadData(DATASET_PATH);
+            var model = TestHelper.TrainModel(trainingData);
+            var predictions = model.Transform(testingData);
+            var metrics = TestHelper.MLContext.MulticlassClassification.Evaluate(predictions, "Label", "Score", "PredictedLabel");
+            var categories = new string[] { "FlashLight", "Infrared", "Day", "Lighter" };
+            var displayString = @"<table style=""margin: 50px; ""><tbody><tr style=""background-color: transparent""><td colspan=""2"" rowspan=""2"" style=""padding: 8px; background-color: lightsteelblue; text-align: center; "">Confusion Matrix</td>";
+            Formatters.Register<ConfusionMatrixWithCategories>();
+
+            //Act
+            var confusionMatrixWithCategories = metrics.ConfusionMatrix.AddCategories(categories);
+            var expectedString = confusionMatrixWithCategories.ToDisplayString("text/html");
+
+            //Assert
+            expectedString.Should().Contain(displayString);
+        }
+
+        [Test]
         public void ConfusionMatrix_MissingCategories_ReturnsHtml()
         {
             //Arrange
@@ -102,6 +122,22 @@ namespace ApexCode.Interactive.Formatting.UnitTests
 
             //Assert
             metrics.ConfusionMatrix.ToDisplayString("text/html").Should().Be("The number of classes in the Confusion Matrix (4) does not match the number of categories argument ()");
+        }
+
+        [Test]
+        public void ConfusionMatrixWithCategories_MissingCategories_ReturnsHtml()
+        {
+            //Arrange
+            var (trainingData, testingData) = TestHelper.LoadData(DATASET_PATH);
+            var model = TestHelper.TrainModel(trainingData);
+            var predictions = model.Transform(testingData);
+            var metrics = TestHelper.MLContext.MulticlassClassification.Evaluate(predictions, "Label", "Score", "PredictedLabel");
+
+            //Act
+            Formatters.Register<ConfusionMatrixWithCategories>();
+
+            //Assert
+            metrics.ConfusionMatrix.AddCategories(null).ToDisplayString("text/html").Should().Be("The number of classes in the Confusion Matrix (4) does not match the number of categories argument ()");
         }
     }
 }
