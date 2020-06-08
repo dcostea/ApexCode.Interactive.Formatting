@@ -26,12 +26,16 @@ namespace ApexCode.Interactive.Formatting
                     RegisterConfusionMatrix(parameters);
                     break;
 
-                case Type cfType when cfType == typeof(ConfusionMatrixWithCategories):
-                    RegisterConfusionMatrixWithCategories();
+                case Type cfdwType when cfdwType == typeof(ConfusionMatrixDisplayView):
+                    RegisterConfusionMatrixDisplayView();
                     break;
 
                 case Type mcmType when mcmType == typeof(MulticlassClassificationMetrics):
                     RegisterMulticlassClassificationMetrics(parameters);
+                    break;
+
+                case Type mcmdwType when mcmdwType == typeof(MulticlassClassificationMetricsDisplayView):
+                    RegisterMulticlassClassificationMetricsDisplayView();
                     break;
 
                 case Type lmcmType when lmcmType == typeof(List<TrainCatalogBase.CrossValidationResult<MulticlassClassificationMetrics>>):
@@ -198,9 +202,93 @@ namespace ApexCode.Interactive.Formatting
             Console.WriteLine("MulticlassClassificationMetrics formatter loaded.");
         }
 
-        private static void RegisterConfusionMatrixWithCategories()
+        private static void RegisterMulticlassClassificationMetricsDisplayView()
         {
-            Formatter<ConfusionMatrixWithCategories>.Register((cm, writer) =>
+            Formatter<MulticlassClassificationMetricsDisplayView>.Register((m, writer) =>
+            {
+                if (m.Categories?.Length == m.Metrics.PerClassLogLoss.Count)
+                {
+                    string[] categories = new string[m.Metrics.PerClassLogLoss.Count];
+
+                    for (int i = 0; i < m.Categories.Count(); i++)
+                    {
+                        categories[i] = m.Categories[i].ToString();
+                    }
+
+                    var oneMessage = "the closer to 1, the better";
+                    var zeroMessage = "the closer to 0, the better";
+
+                    var headers = new List<IHtmlContent>
+            {
+                th(b("EVALUATION: multi-class classification")),
+                th(b("Class")),
+                th(b("Value")),
+                th(b("Note"))
+            };
+
+                    var rows = new List<List<IHtmlContent>>();
+
+                    var cells = new List<IHtmlContent>
+            {
+                td(b("MacroAccuracy")),
+                td(""),
+                td($"{m.Metrics.MacroAccuracy:0.000}"),
+                td(oneMessage)
+            };
+                    rows.Add(cells);
+
+                    cells = new List<IHtmlContent>
+            {
+                td(b("MicroAccuracy")),
+                td(""),
+                td($"{m.Metrics.MicroAccuracy:0.000}"),
+                td(oneMessage)
+            };
+                    rows.Add(cells);
+
+                    cells = new List<IHtmlContent>
+            {
+                td(b("LogLoss")),
+                td(""),
+                td($"{m.Metrics.LogLoss:0.000}"),
+                td(zeroMessage)
+            };
+                    rows.Add(cells);
+
+                    cells = new List<IHtmlContent>
+            {
+                td[rowspan: $"{m.Metrics.PerClassLogLoss.Count + 1}"](b("LogLoss per Class"))
+            };
+                    rows.Add(cells);
+
+                    for (int i = 0; i < m.Metrics.PerClassLogLoss.Count; i++)
+                    {
+                        cells = new List<IHtmlContent>
+                {
+                    td($"{categories[i]}"),
+                    td($"{m.Metrics.PerClassLogLoss[i]:0.000}"),
+                    td(zeroMessage)
+                };
+                        rows.Add(cells);
+                    }
+
+                    var t = table(
+                        thead(headers),
+                        tbody(rows.Select(r => tr(r))));
+                    writer.Write(t);
+                }
+                else
+                {
+                    writer.Write($"The number of classes by Correlation Matrix ({m.Metrics.PerClassLogLoss.Count}) does not match the number of categories argument ({m.Categories?.Length})");
+                }
+            }, "text/html");
+
+            Console.WriteLine("MulticlassClassificationMetrics formatter loaded.");
+        }
+
+        private static void RegisterConfusionMatrixDisplayView()
+        {
+            Formatter<ConfusionMatrixDisplayView>.Register((cm, writer) =>
             {
                 if (cm.Categories?.Length == cm.ConfusionMatrix.NumberOfClasses)
                 {
@@ -415,7 +503,7 @@ namespace ApexCode.Interactive.Formatting
                 //table
                 var t = table[id: "dftable"](
                     caption(title),
-                    thead(header),
+                    thead(tr(header)),
                     tbody(rows.Select(r => tr[style: "display: none"](r))),
                     tfoot(tr(td[colspan: df.Columns.Count + 1](footer)))
                 );
