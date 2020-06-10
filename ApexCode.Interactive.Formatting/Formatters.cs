@@ -498,7 +498,7 @@ namespace ApexCode.Interactive.Formatting
 
                 if (df.Rows.Count > SIZE)
                 {
-                    var paginateScriptFirst = BuildHideRowsScript(uniqueId) + GotoPageIndex(uniqueId, 1) + BuildPageScript(uniqueId, SIZE);
+                    var paginateScriptFirst = BuildHideRowsScript(uniqueId) + GotoPageIndex(uniqueId, 0) + BuildPageScript(uniqueId, SIZE);
                     footer.Add(button[style: "margin: 2px;", onclick: paginateScriptFirst]("first"));
 
                     var paginateScriptPrev = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, -1, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
