@@ -462,12 +462,13 @@ namespace ApexCode.Interactive.Formatting
         {
             Formatter<DataFrame>.Register((df, writer) =>
             {
-                const int TAKE = 500;
+                const int MAX = 10000;
                 const int SIZE = 20;
 
-                var uniqueId = $"table_{DateTime.Now.Ticks}";
+                var uniqueId = DateTime.Now.Ticks;
 
-                var title = h3[style: "text-align: center;"]($"DataFrame ({df.Columns.Count} columns, {df.Rows.Count} rows) | MAX rows: {TAKE}");
+                var maxMessage = df.Rows.Count > MAX ? $" (showing a max of {MAX} rows!)" : string.Empty;
+                var title = h3[style: "text-align: center;"]($"DataFrame - {df.Rows.Count} rows {maxMessage}");
 
                 var header = new List<IHtmlContent>
                 {
@@ -476,8 +477,9 @@ namespace ApexCode.Interactive.Formatting
                 header.AddRange(df.Columns.Select(c => (IHtmlContent)th(c.Name)));
 
                 // table body
+                var maxRows = Math.Min(MAX, df.Rows.Count);
                 var rows = new List<List<IHtmlContent>>();
-                for (var index = 0; index < Math.Min(TAKE, df.Rows.Count); index++)
+                for (var index = 0; index < Math.Min(MAX, df.Rows.Count); index++)
                 {
                     var cells = new List<IHtmlContent>
                     {
@@ -490,45 +492,78 @@ namespace ApexCode.Interactive.Formatting
                     rows.Add(cells);
                 }
 
+                //navigator      
+                var footer = new List<IHtmlContent>();
                 BuildHideRowsScript(uniqueId);
 
-                var footer = new List<IHtmlContent>();
-                footer.Add(b[style: "margin: 2px;"]("Page"));
-                for (var page = 0; page < TAKE / SIZE; page++)
+                if (df.Rows.Count > SIZE)
                 {
-                    var paginateScript = BuildHideRowsScript(uniqueId) + BuildPageScript(page, SIZE, uniqueId);
-                    footer.Add(button[style: "margin: 2px;", onclick: paginateScript](page));
+                    var paginateScriptFirst = BuildHideRowsScript(uniqueId) + GotoPageIndex(uniqueId, 1) + BuildPageScript(uniqueId, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptFirst]("first"));
+
+                    var paginateScriptPrev = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, -1, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptPrev]("prev"));
+
+                    footer.Add(b[style: "margin: 2px;"]("Page"));
+                    footer.Add(b[id: $"page_{uniqueId}", style: "margin: 2px;"]("1"));
+
+                    var paginateScriptNext = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, 1, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptNext]("next"));
+
+                    var paginateScriptLast = BuildHideRowsScript(uniqueId) + GotoPageIndex(uniqueId, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptLast]("last"));
+                }
+                else
+                {
+                    BuildHideRowsScript(uniqueId);
+                    footer.Add(b[style: "margin: 2px;"]("Page"));
+                    footer.Add(b[id: $"page_{uniqueId}", style: "margin: 2px;"]("0"));
                 }
 
                 //table
-                var t = table[id: $"{uniqueId}"](
+                var t = table[id: $"table_{uniqueId}"](
                     caption(title),
                     thead(tr(header)),
                     tbody(rows.Select(r => tr[style: "display: none"](r))),
-                    tfoot(tr(td[colspan: df.Columns.Count + 1](footer)))
+                    tfoot(tr(td[colspan: df.Columns.Count + 1, style: "text-align: center;"](footer)))
                 );
                 writer.Write(t);
 
                 //show first page
-                writer.Write($"<script>{BuildPageScript(0, SIZE, uniqueId)}</script>");
+                writer.Write($"<script>{BuildPageScript(uniqueId, SIZE)}</script>");
 
             }, "text/html");
 
             Console.WriteLine("DataFrame formatter loaded.");
 
-            static string BuildPageScript(int page, int size, string uniqueId)
+            static string BuildHideRowsScript(long uniqueId)
             {
-                var script = string.Empty;
-                script += $"var els = document.querySelectorAll('#{uniqueId} tbody tr:nth-child(n+{page * size + 1})'); ";
-                script += $"for (var j = 0; j < {size}; j++) {{ els[j].style.display='table-row'; }}";
+                var script = $"var allRows = document.querySelectorAll('#table_{uniqueId} tbody tr:nth-child(n)'); ";
+                script += "for (var i = 0; i < allRows.length; i++) { allRows[i].style.display='none'; } ";
                 return script;
             }
 
-            static string BuildHideRowsScript(string uniqueId)
+            static string BuildPageScript(long uniqueId, int size)
             {
-                string script = string.Empty;
-                script += $"var els = document.querySelectorAll('#{uniqueId} tbody tr:nth-child(n)'); ";
-                script += "for (var i = 0; i < els.length; i++) { els[i].style.display='none'; } ";
+                var script = $"var page = parseInt(document.querySelector('#page_{uniqueId}').innerHTML) - 1; ";
+                script += $"var pageRows = document.querySelectorAll(`#table_{uniqueId} tbody tr:nth-child(n + ${{page * {size} + 1 }})`); ";
+                script += $"for (var j = 0; j < {size}; j++) {{ pageRows[j].style.display='table-row'; }} ";
+                return script;
+            }
+
+            static string GotoPageIndex(long uniqueId, long page)
+            {
+                var script = $"document.querySelector('#page_{uniqueId}').innerHTML = {page + 1}; ";
+                return script;
+            }
+
+            static string UpdatePageIndex(long uniqueId, int step, long maxPage)
+            {
+                var script = $"var page = parseInt(document.querySelector('#page_{uniqueId}').innerHTML) - 1; ";
+                script += $"page = parseInt(page) + parseInt({step}); ";
+                script += $"page = page < 0 ? 0 : page; ";
+                script += $"page = page > {maxPage} ? {maxPage} : page; ";
+                script += $"document.querySelector('#page_{uniqueId}').innerHTML = page + 1; ";
                 return script;
             }
         }
