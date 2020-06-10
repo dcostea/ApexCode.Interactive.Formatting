@@ -463,7 +463,7 @@ namespace ApexCode.Interactive.Formatting
             Formatter<DataFrame>.Register((df, writer) =>
             {
                 const int MAX = 10000;
-                const int SIZE = 20;
+                const int SIZE = 10;
 
                 var uniqueId = DateTime.Now.Ticks;
 
@@ -499,19 +499,25 @@ namespace ApexCode.Interactive.Formatting
                 if (df.Rows.Count > SIZE)
                 {
                     var paginateScriptFirst = BuildHideRowsScript(uniqueId) + GotoPageIndex(uniqueId, 0) + BuildPageScript(uniqueId, SIZE);
-                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptFirst]("first"));
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptFirst]("⏮"));
+
+                    var paginateScriptPrevTen = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, -10, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptPrevTen]("⏪"));
 
                     var paginateScriptPrev = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, -1, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
-                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptPrev]("prev"));
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptPrev]("◀️"));
 
                     footer.Add(b[style: "margin: 2px;"]("Page"));
                     footer.Add(b[id: $"page_{uniqueId}", style: "margin: 2px;"]("1"));
 
                     var paginateScriptNext = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, 1, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
-                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptNext]("next"));
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptNext]("▶️"));
+
+                    var paginateScriptNextTen = BuildHideRowsScript(uniqueId) + UpdatePageIndex(uniqueId, 10, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptNextTen]("⏩"));
 
                     var paginateScriptLast = BuildHideRowsScript(uniqueId) + GotoPageIndex(uniqueId, (maxRows - 1) / SIZE) + BuildPageScript(uniqueId, SIZE);
-                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptLast]("last"));
+                    footer.Add(button[style: "margin: 2px;", onclick: paginateScriptLast]("⏭️"));
                 }
                 else
                 {
