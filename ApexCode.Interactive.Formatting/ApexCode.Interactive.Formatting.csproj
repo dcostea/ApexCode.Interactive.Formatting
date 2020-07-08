@@ -10,17 +10,14 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Apex Code, 2020</Copyright>
     <PackageTags>ML, MLNET, ObjectFormatters, Jupyter</PackageTags>
-    <Version>0.0.1-beta.2</Version>
+    <Version>0.0.1-beta.3</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/dcostea/ApexCode.Interactive.Formatting</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dcostea/ApexCode.Interactive.Formatting</RepositoryUrl>
-    <PackageReleaseNotes>Alpha release may contain bugs.
-
-So far, implemented formatters are:
+    <PackageReleaseNotes>So far, implemented formatters are:
 
 ConfusionMatrix for Multi-classification (I got inspired from the excellent Jupyter Notebooks here: https://xamlbrewer.wordpress.com/2020/02/20/getting-started-with-ml-net-in-jupyter-notebooks where you can find ConfusionMatrix for binary classification)
 MulticlassClassificationMetrics
-DataFrames (I have got this from this article: https://devblogs.microsoft.com/dotnet/an-introduction-to-dataframe)
 </PackageReleaseNotes>
   </PropertyGroup>
 
