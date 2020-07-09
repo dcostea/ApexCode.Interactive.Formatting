@@ -21,8 +21,8 @@ jobs:
       env: 
         NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }} 
     - name: Install dependencies
-      run: dotnet restore ApexCode.Interactive.Formatting.sln
+      run: dotnet restore 
     - name: Build
-      run: dotnet build ApexCode.Interactive.Formatting.sln --configuration Release --no-restore
+      run: dotnet build --configuration Release --no-restore
     - name: Test
-      run: dotnet test ApexCode.Interactive.Formatting.sln --no-restore --verbosity normal
+      run: dotnet test --no-restore --verbosity normal
