@@ -5,13 +5,16 @@
 
 # Jupyter Notebook
 ```
-#r "nuget:ApexCode.Interactive.Formatting,0.0.1-alpha.5"
+#r "nuget:ApexCode.Interactive.Formatting"
 using ApexCode.Interactive.Formatting;
 ```
-## DataFrame
+## DataFrame, DataFrameColumn
 ```
 Formatters.Register<DataFrame>();
 display(df);
+
+var columnRows = dataFrame.Columns[0];
+display(columnRows);
 ```
 ## ConfusionMatrix (variant 1)
 ```
